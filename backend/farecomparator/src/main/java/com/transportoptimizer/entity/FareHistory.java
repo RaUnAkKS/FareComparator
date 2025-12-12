@@ -21,9 +21,11 @@ public class FareHistory {
     private String historyId;
 
     private String userId;
+    private String chosenProviderName;
     private TripRequest tripRequest;
     private FareEstimate fareEstimate;
     private String chosenProviderId;
+    private ProviderFare chosenFare;  // MUST exist to access providerName
     private Double savings;
     private Instant createdAt;
 }
