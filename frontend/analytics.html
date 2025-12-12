@@ -109,58 +109,81 @@
 
     // SUMMARY DATA
     async function loadSummary(userId) {
-      try {
-        const res = await fetch(`/api/v1/analytics/summary?userId=${userId}`);
-        const data = await res.json();
+  try {
+    const res = await fetch(`/api/v1/analytics/summary?userId=${userId}`);
 
-        totalRequests.textContent = data.totalRequests ?? '—';
-        avgSavings.textContent = (data.averageSavings ?? 0).toFixed(2);
-        mostUsed.textContent = data.mostUsedProvider ?? '—';
-      } catch (e) {
-        console.error("Summary error", e);
-      }
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "Unable to read error body");
+      console.error(`Summary API Error: HTTP ${res.status} - ${errText}`);
+      throw new Error(`Summary request failed: ${res.status}`);
     }
+
+    const data = await res.json();
+
+    totalRequests.textContent = data.totalRequests ?? '—';
+    avgSavings.textContent = (data.averageSavings ?? 0).toFixed(2);
+    mostUsed.textContent = data.mostUsedProvider ?? '—';
+
+  } catch (e) {
+    console.error("Summary fetch error:", e);
+  }
+}
+
 
     // PROVIDER-WISE SAVINGS TREND
-    async function loadProviderSavings(userId) {
-      chartLoading.style.display = "flex";
-      noDataMessage.style.display = "none";
+    // PROVIDER-WISE SAVINGS TREND
+async function loadProviderSavings(userId) {
+  chartLoading.style.display = "flex";
+  noDataMessage.style.display = "none";
 
-      try {
-        const res = await fetch(`/api/v1/analytics/provider-savings-trend?userId=${userId}`);
-        const data = await res.json();
+  try {
+    const res = await fetch(`/api/v1/analytics/provider-savings-trend?userId=${userId}`);
 
-        if (!data.labels?.length || !data.datasets?.length) {
-          destroyChart();
-          noDataMessage.style.display = "block";
-          return;
-        }
+    // 🔥 HTTP STATUS CHECK (CodeRabbit requirement)
+    if (!res.ok) {
+      console.error(`ProviderSavings API Error: HTTP ${res.status} - ${res.statusText}`);
 
-        const chartData = data.datasets.map((ds, i) => {
-          let color = COLORS[i % COLORS.length];
-          return {
-            label: ds.label,
-            data: ds.data,
-            tension: 0.3,
-            borderWidth: 2,
-            fill: false,
-            borderColor: color,
-            backgroundColor: color,
-            pointRadius: 4,
-            pointHoverRadius: 6
-          };
-        });
+      destroyChart();
+      noDataMessage.style.display = "block";
 
-        renderProviderChart(data.labels, chartData);
-
-      } catch (e) {
-        console.error("Provider-savings error", e);
-        destroyChart();
-        noDataMessage.style.display = "block";
-      } finally {
-        chartLoading.style.display = "none";
-      }
+      return; // ❗ Prevent parsing non-JSON error body
     }
+
+    // ✔ Only parse JSON when response.ok = true
+    const data = await res.json();
+
+    if (!data.labels?.length || !data.datasets?.length) {
+      destroyChart();
+      noDataMessage.style.display = "block";
+      return;
+    }
+
+    const chartData = data.datasets.map((ds, i) => {
+      const color = COLORS[i % COLORS.length];
+      return {
+        label: ds.label,
+        data: ds.data,
+        tension: 0.3,
+        borderWidth: 2,
+        fill: false,
+        borderColor: color,
+        backgroundColor: color,
+        pointRadius: 4,
+        pointHoverRadius: 6
+      };
+    });
+
+    renderProviderChart(data.labels, chartData);
+
+  } catch (e) {
+    console.error("ProviderSavings fetch error:", e);
+    destroyChart();
+    noDataMessage.style.display = "block";
+  } finally {
+    chartLoading.style.display = "none";
+  }
+}
+
 
     function renderProviderChart(labels, datasets) {
       if (providerChart) providerChart.destroy();
