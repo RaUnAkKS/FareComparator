@@ -118,12 +118,18 @@ public class CompareController {
 
             // STEP 5: Save History in MongoDB (EXACT STRUCTURE AS YOUR MODEL)
             FareHistory history = FareHistory.builder()
-                    .historyId(null)       // Mongo auto-generate karega
+                    .historyId(null)
                     .userId(dto.getUserId())
-                    .tripRequest(trip)     // FULL TripRequest store
-                    .fareEstimate(estimate) // FULL FareEstimate store (providers list included)
+                    .tripRequest(trip)
+                    .fareEstimate(estimate)
                     .chosenProviderId(suggestion.getChosenProviderId())
-                    .savings(savings) // allowed to be null
+                    .chosenProviderName(
+                            suggestion.getChosenFare() != null
+                                    ? suggestion.getChosenFare().getProviderName()
+                                    : suggestion.getChosenProviderId()
+                    )
+                    .chosenFare(suggestion.getChosenFare())
+                    .savings(savings)
                     .createdAt(Instant.now())
                     .build();
 
@@ -139,3 +145,4 @@ public class CompareController {
         }
     }
 }
+

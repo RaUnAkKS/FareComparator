@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 public class AnalyticsController {
 
     private final FareHistoryRepository fareHistoryRepository;
+
     @GetMapping("/trends")
     public Map<String, Object> trends(@RequestParam String userId) {
 
@@ -39,10 +40,10 @@ public class AnalyticsController {
                 "requestCountPerDay", data
         );
     }
+
     @GetMapping("/savings-trend")
     public Map<String, Object> savingsTrend(@RequestParam String userId) {
 
-        // Get last 7 records sorted by createdAt (latest first)
         List<FareHistory> history = fareHistoryRepository
                 .findByUserIdOrderByCreatedAtDesc(userId)
                 .stream()
@@ -50,10 +51,8 @@ public class AnalyticsController {
                 .limit(7)
                 .collect(Collectors.toList());
 
-        // Reverse → so oldest first (better graph flow)
         Collections.reverse(history);
 
-        // X-Axis → Request number (#1, #2, ...)
         List<String> labels = new ArrayList<>();
         List<Double> savingsList = new ArrayList<>();
 
@@ -106,4 +105,89 @@ public class AnalyticsController {
                 "mostUsedProvider", mostUsedProvider
         );
     }
+
+
+    // --------------------------------------------------------------
+    // ⭐ NEW ENDPOINT (Minimal addition for Provider-wise Savings Graph)
+    // --------------------------------------------------------------
+    @GetMapping("/provider-savings-trend")
+    public Map<String, Object> providerSavingsTrend(@RequestParam String userId) {
+
+        List<FareHistory> history = fareHistoryRepository
+                .findByUserIdOrderByCreatedAtDesc(userId)
+                .stream()
+                .filter(h -> h.getSavings() != null)
+                .collect(Collectors.toList());
+
+        if (history.isEmpty()) {
+            return Map.of(
+                    "labels", List.of(),
+                    "datasets", List.of()
+            );
+        }
+
+        // oldest → newest
+        Collections.reverse(history);
+
+        List<String> labels = new ArrayList<>();
+        int c = 1;
+        for (int i = 0; i < history.size(); i++) {
+            labels.add("#" + c++);
+        }
+
+        Map<String, List<Double>> providerSavings = new HashMap<>();
+        Map<String, String> providerNames = new HashMap<>();
+
+        int idx = 0;
+        for (FareHistory h : history) {
+            String pid = h.getChosenProviderId();
+            if (pid == null) {
+                idx++;
+                continue;
+            }
+
+            String name = null;
+
+// 1) If chosenFare exists → use providerName
+            if (h.getChosenFare() != null &&
+                    h.getChosenFare().getProviderName() != null &&
+                    !h.getChosenFare().getProviderName().isBlank()) {
+
+                name = h.getChosenFare().getProviderName();
+            }
+
+// 2) Else use chosenProviderName (fallback)
+            else if (h.getChosenProviderName() != null &&
+                    !h.getChosenProviderName().isBlank()) {
+
+                name = h.getChosenProviderName();
+            }
+
+// 3) Last fallback → providerId
+            else {
+                name = h.getChosenProviderId();
+            }
+
+
+            providerSavings.putIfAbsent(pid, new ArrayList<>(Collections.nCopies(labels.size(), null)));
+            providerSavings.get(pid).set(idx, h.getSavings());
+
+            providerNames.put(pid, name);
+            idx++;
+        }
+
+        List<Map<String, Object>> datasets = new ArrayList<>();
+        for (String pid : providerSavings.keySet()) {
+            datasets.add(Map.of(
+                    "label", providerNames.get(pid),
+                    "data", providerSavings.get(pid)
+            ));
+        }
+
+        return Map.of(
+                "labels", labels,
+                "datasets", datasets
+        );
+    }
 }
+
