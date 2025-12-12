@@ -138,9 +138,13 @@ public class AnalyticsController {
         Map<String, List<Double>> providerSavings = new HashMap<>();
         Map<String, String> providerNames = new HashMap<>();
 
+        int idx = 0;
         for (FareHistory h : history) {
             String pid = h.getChosenProviderId();
-            if (pid == null) continue;
+            if (pid == null) {
+                idx++;
+                continue;
+            }
 
             String name = null;
 
@@ -165,16 +169,12 @@ public class AnalyticsController {
             }
 
 
-            providerSavings.putIfAbsent(pid, new ArrayList<>());
-            providerSavings.get(pid).add(h.getSavings());
+            providerSavings.putIfAbsent(pid, new ArrayList<>(Collections.nCopies(labels.size(), null)));
+            providerSavings.get(pid).set(idx, h.getSavings());
 
             providerNames.put(pid, name);
+            idx++;
         }
-
-        // pad missing values → keep equal length
-        providerSavings.forEach((pid, list) -> {
-            while (list.size() < labels.size()) list.add(null);
-        });
 
         List<Map<String, Object>> datasets = new ArrayList<>();
         for (String pid : providerSavings.keySet()) {
