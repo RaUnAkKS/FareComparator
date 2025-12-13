@@ -81,7 +81,12 @@
         </div>
           <!-- Info / Disclaimer (Inline) -->
           <div class="disclaimer-wrapper">
-              <button id="toggleDisclaimer" class="info-circle">i</button>
+              <button id="toggleDisclaimer"
+                      class="info-circle"
+                      type="button"
+                      aria-controls="disclaimerBox"
+                      aria-expanded="false"
+                      aria-label="Show information and disclaimers">i</button>
 
               <div id="disclaimerBox" class="disclaimer-box hidden">
                   <ul>
@@ -274,7 +279,13 @@ sortedFares.forEach(p => {
 const disclaimerBox = document.getElementById('disclaimerBox');
 
 toggleDisclaimer.addEventListener('click', () => {
-  disclaimerBox.classList.toggle('hidden');
+  const isHidden = disclaimerBox.classList.toggle('hidden');
+
+  // Update accessibility state
+  toggleDisclaimer.setAttribute(
+    'aria-expanded',
+    String(!isHidden)
+  );
 });
 function showEmptyState(message) {
   providersList.innerHTML = `
@@ -296,4 +307,5 @@ function showEmptyState(message) {
 </script>
 </body>
 </html>
+
 
