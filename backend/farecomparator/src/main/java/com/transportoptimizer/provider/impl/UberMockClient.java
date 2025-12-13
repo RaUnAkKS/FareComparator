@@ -76,7 +76,7 @@ public class UberMockClient implements ProviderClient {
 
         return ProviderFare.builder()
                 .providerId(providerId())
-                .providerName(name)
+                .providerName(providerName())
                 .vehicleType(vehicleType)
                 .distanceKm(distance)
                 .price(finalPrice)
@@ -84,12 +84,13 @@ public class UberMockClient implements ProviderClient {
                 .currency("INR")
                 .isSurge(surge)
                 .metadata(Map.of(
+                        "productName", name,
                         "baseFare", baseFare,
                         "ratePerKm", ratePerKm,
                         "distanceFare", distanceFare,
                         "surgeFactor", surgeFactor,
                         "pricingModel", "base + distance * surge",
-                        "source", "osrm"
+                        "source", "mock"
                 ))
                 .build();
     }
