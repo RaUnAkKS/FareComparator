@@ -60,6 +60,7 @@ public class DtoMapper {
                 .etaMinutes(providerFare.getEtaMinutes())
                 .isSurge(providerFare.isSurge())
                 .metadata(providerFare.getMetadata())
+                .vehicleType(providerFare.getVehicleType())
                 .build();
     }
 
