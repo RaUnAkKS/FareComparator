@@ -1,32 +1,24 @@
 package com.transportoptimizer.Services;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class DistanceService {
 
-    /**
-     * Calculates a deterministic pseudo-distance (1.0 km to 25.0 km)
-     * based on hash of origin & destination.
-     */
+    private final DistanceMatrixService distanceMatrixService;
+
     public double calculateDistanceKm(String origin, String destination) {
-        int seed = Math.abs(Objects.hash(origin, destination)) % 2500;
-        double distanceKm = 1 + (seed / 100.0);
-
-        log.debug("Calculated pseudo-distance between '{}' and '{}' = {} km",
-                origin, destination, distanceKm);
-
-        return distanceKm;
+        double distance = distanceMatrixService.getDistanceKm(origin, destination);
+        log.info("distance {} -> {} = {} km", origin, destination, distance);
+        return distance;
     }
 
-    /**
-     * Async version using CompletableFuture.
-     */
     public CompletableFuture<Double> calculateDistanceKmAsync(String origin, String destination) {
         return CompletableFuture.supplyAsync(() -> calculateDistanceKm(origin, destination));
     }
