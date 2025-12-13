@@ -68,7 +68,7 @@ public class RapidoMockClient implements ProviderClient {
 
         return ProviderFare.builder()
                 .providerId(providerId())
-                .providerName(name)
+                .providerName(providerName())
                 .vehicleType(vehicleType)
                 .distanceKm(distance)
                 .price(finalPrice)
@@ -76,6 +76,7 @@ public class RapidoMockClient implements ProviderClient {
                 .currency("INR")
                 .isSurge(surge)
                 .metadata(Map.of(
+                        "productName", name,
                         "baseFare", baseFare,
                         "ratePerKm", ratePerKm,
                         "distanceFare", distanceFare,
@@ -138,3 +139,4 @@ public class RapidoMockClient implements ProviderClient {
         return new Random().nextDouble() * (max - min) + min;
     }
 }
+
