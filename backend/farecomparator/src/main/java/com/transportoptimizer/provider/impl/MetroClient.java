@@ -1,7 +1,9 @@
 package com.transportoptimizer.provider.impl;
 
+import com.transportoptimizer.Services.MetroCoverageService;
 import com.transportoptimizer.entity.ProviderFare;
 import com.transportoptimizer.provider.ProviderClient;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -10,7 +12,10 @@ import java.util.Map;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class MetroClient implements ProviderClient {
+
+    private final MetroCoverageService metroCoverageService;
 
     @Override
     public String providerId() {
@@ -23,32 +28,39 @@ public class MetroClient implements ProviderClient {
     }
 
     @Override
-    public ProviderFare getFare(String origin, String destination) {
-        return getFaresBatch(origin, destination, null).get(0);
-    }
+    public ProviderFare getFare(String origin, String destination, double distance) {
 
-    @Override
-    public List<ProviderFare> getFaresBatch(String origin, String destination, Map<String, Object> options) {
-        double distance = pseudoDistance(origin, destination);
-        double price = 10 + distance * 2;
-        int eta = (int) (distance / 0.4);
+        //  STRICT station-level check
+        if (!metroCoverageService.isMetroRoute(origin, destination)) {
+            log.info("Metro NOT available for route: {} -> {}", origin, destination);
+            return null;
+        }
 
-        ProviderFare fare = ProviderFare.builder()
+        double price = 10 + (distance * 5)/1.5;
+        int eta = (int) Math.max(5, distance / 0.4);
+
+        return ProviderFare.builder()
                 .providerId(providerId())
-                .providerName("Metro Standard")
+                .providerName("Metro")
                 .vehicleType("metro")
                 .distanceKm(distance)
                 .price(price)
                 .etaMinutes(eta)
                 .currency("INR")
                 .isSurge(false)
-                .metadata(Map.of("source", "mock"))
+                .metadata(Map.of("network", "city-metro"))
                 .build();
-
-        return List.of(fare);
     }
 
-    private double pseudoDistance(String a, String b) {
-        return Math.max(1, Math.abs(a.hashCode() - b.hashCode()) % 25);
+    @Override
+    public List<ProviderFare> getFaresBatch(
+            String origin,
+            String destination,
+            double distance,
+            Map<String, Object> options
+    ) {
+        ProviderFare fare = getFare(origin, destination, distance);
+        return fare == null ? List.of() : List.of(fare);
     }
 }
+
