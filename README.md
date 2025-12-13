@@ -1,121 +1,173 @@
-# 🚗 FareComparator  
-Compare fares of different transportation modes and help users decide the cheapest option.
+# FareComparator
+
+A unified platform to **estimate and compare fares** across multiple road-based transport providers for **short to medium distance travel**, helping users choose the **cheapest or fastest option** through a single interface.
 
 ---
 
-## 📌 Overview  
-FareComparator is a smart fare comparison system that analyzes the cost of different transport modes (Auto, Cab, Bus, Train, etc.) and helps users choose the cheapest and fastest option.
+## 🚩 Problem Statement
 
-This project is built for a **Hackathon**, following a clean workflow:
-- GitHub Issues  
-- PR Templates  
-- Code Reviews using **CodeRabbit AI**  
-- Branch Protection Rules  
-- Clean Git Commit History  
+Urban commuters often rely on multiple transport providers such as cabs, bikes, metros, and buses.  
+However, fare information is **scattered across individual platforms**, making comparison time-consuming and inefficient.
+
+There is a need for a **single comparison system** that aggregates fare estimates and assists users in making better travel decisions.
 
 ---
 
-## ✨ Features (Planned)
-- 🔍 Compare fares across multiple transport modes  
-- 📍 User location‑based suggestions  
-- 🧠 AI‑powered recommendations (optional add‑on)  
-- 📊 Fare breakdown visualization  
-- 🔐 Secure backend with JWT Authentication  
-- 🌐 Clean UI (React / HTML‑CSS‑JS)  
+## 💡 Solution Overview
+
+**FareComparator** aggregates estimated fares from multiple transport providers using a **modular backend architecture** and presents them through a clean, intuitive frontend.
+
+The platform focuses on:
+- **Fare estimation & comparison**
+- **Provider recommendation**
+- **Analytics & insights**
+
+> Note: This project focuses on comparison and estimation, **not booking**.
 
 ---
 
-## 🛠 Tech Stack
-### **Backend**
-- Spring Boot  
-- MongoDB  
-- REST APIs  
+## ✨ Key Features
 
-### **Frontend**
-- React / HTML‑CSS‑JS (replace later based on real project)
-
-### **DevOps / Tools**
-- Git & GitHub  
-- CodeRabbit AI Review  
-- GitHub Actions (CI)  
-- Railway / Render Deployment  
+- 🔗 Unified fare comparison across multiple providers
+- 💰 Cheapest option highlighting
+- ⏱️ Fastest option identification
+- 📏 Distance-based fare estimation
+- 🧠 Provider recommendation logic
+- 📊 Analytics and fare history tracking
+- ⚠️ Graceful handling of empty and failure states
+- 🎯 Demo-friendly UI with preset routes
 
 ---
 
-## 📁 Folder Structure (Will update after code arrives)
-FareComparator/
-│── backend/
-│ ├── src/
-│ ├── pom.xml
-│── frontend/
-│ ├── src/
-│ ├── package.json
-│── .github/
-│ ├── ISSUE_TEMPLATE/
-│ ├── pull_request_template.md
-│── README.md
-│── CONTRIBUTING.md
-│── CODE_OF_CONDUCT.md
-│── LICENSE
+## 🏗️ Architecture Overview
+
+```
+
+Frontend (HTML/CSS/JS)
+|
+v
+Spring Boot Backend (REST APIs)
+|
+v
+Provider Abstractions (Cab / Bike / Metro / Bus)
+|
+v
+MongoDB (History & Analytics)
+
+```
+
+### Tech Stack
+- **Frontend:** HTML, CSS, JavaScript
+- **Backend:** Java, Spring Boot
+- **Database:** MongoDB (Atlas)
+- **Architecture:** Modular provider-based design
 
 ---
 
-## ⚙️ Environment Variables (Placeholders)
-Create a `.env` file with:
+## 🔌 API Endpoints
 
-MONGO_URI=
-JWT_SECRET=
-PORT=8080
-REACT_APP_BACKEND_URL=
+### Compare Fares
+```
+
+POST /api/v1/compare
+
+```
+
+**Description:**  
+Compares fares between the origin and destination and returns sorted provider results along with recommendations.
 
 ---
 
-## 🚀 Setup & Installation (Will update later)
-### **Backend**
+### Fare History
+```
+
+GET /api/v1/history
+
+```
+
+**Description:**  
+Returns historical comparison data for analytics.
+
+---
+
+### Analytics
+```
+
+GET /api/v1/analytics
+
+````
+
+**Description:**  
+Provides insights such as average fares and provider trends.
+
+---
+
+## ⚠️ Disclaimers & Limitations
+
+- All prices displayed are **approximate estimates** based on calculated or observed data.
+- 100% real-time accuracy is **not guaranteed**.
+- Exact distance calculation requires valid **API keys via environment variables**.
+- For demonstration purposes, **mock distances and predefined routes** are used where required.
+- Ride availability is **not guaranteed** as provider authentication is currently unavailable.
+- Metro options are shown **only for valid station-based routes**.
+
+---
+
+## 🚀 How to Run Locally
+
+### Backend
+1. Clone the repository
+2. Configure MongoDB URI (Atlas or local)
+3. Run the Spring Boot application
+
 ```bash
-cd backend
-./mvnw clean package
 ./mvnw spring-boot:run
-cd frontend
-npm install
-npm start
-📡 API Endpoints (To be filled)
-Method	Endpoint	Description
-GET	/api/fares	Get fare comparison
-POST	/api/user/login	User login
-POST	/api/user/register	Registration
+````
 
+### Frontend
 
-🧪 Code Quality & Workflow
-Code reviews by CodeRabbit
+1. Open `compare.html` in a browser
+2. Update API base URL if backend is deployed
 
-PR template applied
+```js
+const API_BASE = '';
+```
 
-Issue templates (Bug / Feature)
+---
 
-Branch naming rules:
+## 🌐 Deployment
 
-feature/<name>  
-bugfix/<name>  
-hotfix/<name>
+* **Frontend:** GitHub Pages
+* **Backend:** Render
+* **Database:** MongoDB Atlas
 
-📸 Screenshots (Will add after UI is ready)
-🌐 Deployment
-Live URL: Coming Soon
+> Live demo links can be added here after deployment.
 
-👥 Contributors
-Raunak Saraf
+---
 
-Nikhil Pathak
+## 🔮 Future Scope
 
-📜 License
-MIT License
+* Official provider API integrations
+* User authentication & common provider login
+* Real-time distance calculation via external APIs
+* Extended analytics and trend visualization
+* Support for long-distance transport options
 
-❤️ Acknowledgements
-Thanks to:
+---
 
-GitHub
+## 👨‍💻 Developed For
 
-CodeRabbit AI
+This project was developed as part of a **hackathon**, focusing on:
 
-Our Hackathon Organizers
+* clean architecture
+* scalability
+* realistic constraints
+* strong user experience
+
+---
+
+## 📜 License
+
+This project is intended for **educational and hackathon purposes only**.
+
+```
