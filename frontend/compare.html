@@ -119,9 +119,13 @@
           ${p.isSurge ? '<div class="surge">Surge</div>' : ''}
         </div>
         <div class="provider-body">
-          <div class="fare">₹ ${Number(p.price).toFixed(2)}</div>
-          <div class="eta">ETA: ${p.etaMinutes ?? '-'}m</div>
-        </div>
+  <div class="fare">₹ ${Number(p.price).toFixed(2)}</div>
+  <div class="eta">ETA: ${p.etaMinutes ?? '-'}m</div>
+  <div class="small text-muted">
+    Vehicle: ${escapeHtml(formatVehicleType(p.vehicleType || p.vehicle_type))}
+  </div>
+</div>
+
         <div class="provider-foot">
           <div class="small text-muted">providerId: ${escapeHtml(p.providerId)}</div>
         </div>
@@ -131,6 +135,12 @@
   }
 
   function escapeHtml(s) { return String(s||'').replace(/[&<>"']/g, (m)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+  function formatVehicleType(type) {
+  if (!type) return '-';
+  return type
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase());
+}
 
   async function doCompare(payload) {
     setStatus('Loading...');
