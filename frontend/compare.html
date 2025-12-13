@@ -278,7 +278,7 @@ sortedFares.forEach(p => {
     const toggleDisclaimer = document.getElementById('toggleDisclaimer');
 const disclaimerBox = document.getElementById('disclaimerBox');
 
-toggleDisclaimer.addEventListener('click', () => {
+if (toggleDisclaimer && disclaimerBox) toggleDisclaimer.addEventListener('click', () => {
   const isHidden = disclaimerBox.classList.toggle('hidden');
 
   // Update accessibility state
@@ -302,7 +302,6 @@ function showEmptyState(message) {
     setStatus('Demo route loaded');
   });
 });
-
 
 </script>
 </body>
