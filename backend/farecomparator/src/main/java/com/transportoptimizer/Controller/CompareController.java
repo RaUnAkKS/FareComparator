@@ -69,7 +69,8 @@ public class CompareController {
                                             suggestion.getChosenFare().getPrice(),
                                             suggestion.getChosenFare().getEtaMinutes(),
                                             suggestion.getChosenFare().isSurge(),
-                                            suggestion.getChosenFare().getMetadata()
+                                            suggestion.getChosenFare().getMetadata(),
+                                            suggestion.getChosenFare().getVehicleType()
                                     )
                             )
                             .build();
@@ -94,7 +95,8 @@ public class CompareController {
                                             fare.getPrice(),
                                             fare.getEtaMinutes(),
                                             fare.isSurge(),
-                                            fare.getMetadata()
+                                            fare.getMetadata(),
+                                            fare.getVehicleType()
                                     ))
                                     .collect(Collectors.toList())
                     )
@@ -145,4 +147,3 @@ public class CompareController {
         }
     }
 }
-
