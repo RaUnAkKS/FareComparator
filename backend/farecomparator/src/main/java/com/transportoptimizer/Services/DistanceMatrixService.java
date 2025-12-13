@@ -1,18 +1,4 @@
-package com.transportoptimizer.Services;
-
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Map;
-
-@Service
-@Slf4j
-public class DistanceMatrixService {
+{
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -45,23 +31,54 @@ public class DistanceMatrixService {
 
             Map response = restTemplate.getForObject(url, Map.class);
 
+            if (response == null) {
+                log.warn("Google Matrix returned null response");
+                return mockDistance(origin, destination);
+            }
+
+            String status = (String) response.get("status");
+            if (!"OK".equals(status)) {
+                log.warn("Google Matrix status: {}", status);
+                return mockDistance(origin, destination);
+            }
+
             List rows = (List) response.get("rows");
+            if (rows == null || rows.isEmpty()) {
+                log.warn("Google Matrix returned empty rows");
+                return mockDistance(origin, destination);
+            }
+
             Map row = (Map) rows.get(0);
             List elements = (List) row.get("elements");
+            if (elements == null || elements.isEmpty()) {
+                log.warn("Google Matrix returned empty elements");
+                return mockDistance(origin, destination);
+            }
+
             Map element = (Map) elements.get(0);
+            String elementStatus = (String) element.get("status");
+            if (!"OK".equals(elementStatus)) {
+                log.warn("Google Matrix element status: {}", elementStatus);
+                return mockDistance(origin, destination);
+            }
 
             Map distance = (Map) element.get("distance");
+            if (distance == null || distance.get("value") == null) {
+                log.warn("Google Matrix distance missing");
+                return mockDistance(origin, destination);
+            }
+
             double meters = ((Number) distance.get("value")).doubleValue();
-
             double km = meters / 1000.0;
-            log.info("Google Matrix distance {} -> {} = {} km", origin, destination, km);
 
+            log.info("Google Matrix distance {} -> {} = {} km", origin, destination, km);
             return km;
 
         } catch (Exception e) {
             log.error("Google Matrix failed, using MOCK distance", e);
             return mockDistance(origin, destination);
         }
+
     }
 
     // ---------------- MOCK DISTANCE SECTION ----------------
@@ -74,11 +91,15 @@ public class DistanceMatrixService {
 
         String key = (origin + "->" + destination).toLowerCase();
 
-        if (key.contains("delhi") && key.contains("noida")) return 32.0;
-        if (key.contains("delhi") && key.contains("rajiv chowk")) return 1.0;
-        if (key.contains("mumbai") && key.contains("thane")) return 25.0;
-        if (key.contains("bangalore") && key.contains("hyderabad")) return 218.0;
-        if (key.contains("chennai") && key.contains("tambaram")) return 21.0;
+        if (key.contains("delhi") && key.contains("noida")) return 22.0;
+        if (key.contains("delhi") && key.contains("rajiv chowk")) return 3.0;
+        if (key.contains("mumbai") && key.contains("thane")) return 32.0;
+        if (key.contains("bangalore") && key.contains("hyderabad")) return 575.0;
+        if (key.contains("delhi") && key.contains("karol bagh")) return 21.0;
+        if (key.contains("noida") && key.contains("hyderabad")) return 1686.0;
+        if (key.contains("pune") && key.contains("bangalore")) return 845.0;
+        if (key.contains("pune") && key.contains("mumbai")) return 156.0;
+        if (key.contains("mumbai") && key.contains("hyderabad")) return 742.0;
 
         // generic deterministic fallback
         return 5 + Math.abs(origin.hashCode() - destination.hashCode()) % 20;
