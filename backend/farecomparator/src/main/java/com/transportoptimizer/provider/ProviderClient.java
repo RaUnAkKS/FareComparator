@@ -6,49 +6,65 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * ProviderClient defines the contract for any fare provider integration
- * (e.g., Uber, Ola, Rapido, public transit APIs, etc.).
- * Each provider implementation must supply its ID, name,
- * and logic to fetch fare estimates.
+ * ProviderClient defines the contract for any fare provider integration.
  */
 public interface ProviderClient {
 
-    /**
-     * Returns the unique provider identifier.
-     * This ID should remain stable and be used internally to distinguish providers.
-     *
-     * @return provider's unique ID
-     */
     String providerId();
-
-    /**
-     * Returns the display-friendly provider name.
-     * This name may be shown to users in the frontend response.
-     *
-     * @return provider's display name
-     */
     String providerName();
 
     /**
-     * Fetches a single fare estimate between the given origin and destination.
-     * Implementations should call the provider’s API, parse the response,
-     * and return a populated ProviderFare object.
+     * Fetches a single fare estimate using a precomputed distance.
      *
-     * @param origin      the start location
-     * @param destination the end location
-     * @return ProviderFare containing price, ETA, surge, etc.
+     * @param origin       trip origin
+     * @param destination  trip destination
+     * @param distanceKm   distance in kilometers.
+     *                     A value {@code <= 0} or {@code NaN} indicates
+     *                     an unknown / unavailable distance and implementations
+     *                     should treat it as such (e.g. fallback pricing,
+     *                     approximation, or neutral estimates).
      */
-    ProviderFare getFare(String origin, String destination);
+    ProviderFare getFare(String origin, String destination, double distanceKm);
 
     /**
-     * Fetches multiple fare estimates in batch mode.
-     * Implementations may use provider-specific options such as ride type,
-     * time of day, mode preference, or API flags provided in the options map.
+     * Backward-compatibility fallback.
      *
-     * @param origin      start location
-     * @param destination end location
-     * @param options     optional additional parameters for provider API calls
-     * @return list of ProviderFare results for the given query
+     * <p><b>IMPORTANT:</b> This overload does NOT compute distance.
+     * It delegates with {@code distanceKm = -1} to indicate
+     * an unknown distance. Results may be inaccurate.</p>
+     *
+     * <p>Callers SHOULD prefer {@link #getFare(String, String, double)}
+     * whenever a valid distance is available.</p>
      */
-    List<ProviderFare> getFaresBatch(String origin, String destination, Map<String, Object> options);
+    default ProviderFare getFare(String origin, String destination) {
+        return getFare(origin, destination, -1); // unknown distance sentinel
+    }
+
+    /**
+     * Batch mode with precomputed distance.
+     *
+     * @param distanceKm distance in kilometers; {@code <= 0} or {@code NaN}
+     *                   means unknown distance.
+     */
+    default List<ProviderFare> getFaresBatch(
+            String origin,
+            String destination,
+            double distanceKm,
+            Map<String, Object> options
+    ) {
+        return List.of(getFare(origin, destination, distanceKm));
+    }
+
+    /**
+     * Backward-compatibility batch fallback.
+     *
+     * <p>Delegates with {@code distanceKm = -1} (unknown distance).</p>
+     */
+    default List<ProviderFare> getFaresBatch(
+            String origin,
+            String destination,
+            Map<String, Object> options
+    ) {
+        return getFaresBatch(origin, destination, -1, options);
+    }
 }

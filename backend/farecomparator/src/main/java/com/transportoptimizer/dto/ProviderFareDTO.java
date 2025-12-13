@@ -16,4 +16,6 @@ public class ProviderFareDTO {
     private int etaMinutes;
     private boolean isSurge;
     private Map<String, Object> metadata;
+    private String vehicleType;
 }
+

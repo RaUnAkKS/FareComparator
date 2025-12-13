@@ -11,6 +11,20 @@ import java.util.*;
 @Service
 public class OlaMockClient implements ProviderClient {
 
+    // Base fare per vehicle type (INR)
+    private static final Map<String, Double> BASE_FARE = Map.of(
+            "cab", 40.0,
+            "premium_cab", 70.0,
+            "auto", 25.0
+    );
+
+    // Fixed rate per km per vehicle type
+    private static final Map<String, Double> RATE_PER_KM = Map.of(
+            "cab", 11.0,
+            "premium_cab", 16.0,
+            "auto", 7.0
+    );
+
     @Override
     public String providerId() {
         return "ola-mock";
@@ -21,47 +35,117 @@ public class OlaMockClient implements ProviderClient {
         return "Ola (Mock)";
     }
 
+    // Quick estimate → no time context → controlled randomness
     @Override
-    public ProviderFare getFare(String origin, String destination) {
-        return getFaresBatch(origin, destination, null).get(0);
+    public ProviderFare getFare(String origin, String destination, double distance) {
+        return buildFare("Ola Mini", "cab", distance, 7, 14, null);
     }
 
+    // Compare / planned trip → time-aware surge
     @Override
-    public List<ProviderFare> getFaresBatch(String origin, String destination, Map<String, Object> options) {
-        double distance = pseudoDistance(origin, destination);
-
+    public List<ProviderFare> getFaresBatch(
+            String origin,
+            String destination,
+            double distance,
+            Map<String, Object> options
+    ) {
         return List.of(
-                buildFare("Ola Mini", "cab", distance, 11, 7, 14),
-                buildFare("Ola Prime Sedan", "premium_cab", distance, 17, 6, 12),
-                buildFare("Ola Auto", "auto", distance, 8, 4, 8)
+                buildFare("Ola Mini", "cab", distance, 7, 14, options),
+                buildFare("Ola Prime", "premium_cab", distance, 6, 12, options),
+                buildFare("Ola Auto", "auto", distance, 4, 8, options)
         );
     }
 
-    private ProviderFare buildFare(String vehicleName, String vehicleType, double distance, double rate,
-                                   int minEta, int maxEta) {
+    private ProviderFare buildFare(
+            String vehicleName,
+            String vehicleType,
+            double distance,
+            int minEta,
+            int maxEta,
+            Map<String, Object> options
+    ) {
+        double baseFare = BASE_FARE.getOrDefault(vehicleType, 0.0);
+        double ratePerKm = RATE_PER_KM.getOrDefault(vehicleType, 0.0);
+        double distanceFare = distance * ratePerKm;
 
-        double base = distance * rate;
-        double surgeFactor = random(0.85, 1.55);
-        boolean surge = surgeFactor > 1.3;
+        double surgeFactor = calculateSurgeFactor(vehicleType, options);
+        boolean surge = surgeFactor > 1.15;
+
+        double finalPrice = (baseFare + distanceFare) * surgeFactor;
 
         return ProviderFare.builder()
                 .providerId(providerId())
                 .providerName(vehicleName)
                 .vehicleType(vehicleType)
                 .distanceKm(distance)
-                .price(base * surgeFactor)
+                .price(finalPrice)
                 .etaMinutes((int) random(minEta, maxEta))
                 .currency("INR")
                 .isSurge(surge)
-                .metadata(Map.of("source", "mock"))
+                .metadata(Map.of(
+                        "baseFare", baseFare,
+                        "ratePerKm", ratePerKm,
+                        "distanceFare", distanceFare,
+                        "surgeFactor", surgeFactor,
+                        "pricingModel", "base + distance * surge",
+                        "source", "osrm"
+                ))
                 .build();
     }
 
-    private double pseudoDistance(String a, String b) {
-        return Math.max(1, Math.abs(a.hashCode() - b.hashCode()) % 25);
+    private double calculateSurgeFactor(
+            String vehicleType,
+            Map<String, Object> options
+    ) {
+        // No time provided → controlled randomness
+        if (options == null || !options.containsKey("departureTime")) {
+            return random(0.95, 1.15);
+        }
+
+        try {
+            String timeStr = options.get("departureTime").toString();
+            int hour = Integer.parseInt(timeStr.substring(11, 13)); // yyyy-MM-ddTHH:mm
+
+            boolean morningPeak = hour >= 8 && hour <= 11;
+            boolean eveningPeak = hour >= 17 && hour <= 21;
+            boolean afternoonLow = hour >= 12 && hour <= 16;
+
+            double baseSurge;
+
+            if (morningPeak || eveningPeak) {
+                baseSurge = switch (vehicleType) {
+                    case "auto" -> 1.10;
+                    case "cab" -> 1.20;
+                    case "premium_cab" -> 1.30;
+                    default -> 1.15;
+                };
+            } else if (afternoonLow) {
+                baseSurge = switch (vehicleType) {
+                    case "auto" -> 0.95;
+                    case "cab" -> 1.0;
+                    case "premium_cab" -> 1.05;
+                    default -> 1.0;
+                };
+            } else {
+                // night / early morning
+                baseSurge = switch (vehicleType) {
+                    case "auto" -> 1.0;
+                    case "cab" -> 1.05;
+                    case "premium_cab" -> 1.10;
+                    default -> 1.05;
+                };
+            }
+
+            // small randomness to avoid static pricing
+            return baseSurge + random(-0.05, 0.05);
+
+        } catch (Exception e) {
+            return random(0.95, 1.15);
+        }
     }
 
     private double random(double min, double max) {
         return new Random().nextDouble() * (max - min) + min;
     }
 }
+
