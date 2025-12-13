@@ -21,15 +21,15 @@
         <div class="card-header">
           <div>
             <h1 class="card-title">Compare Fares</h1>
-            <p class="text-muted">Enter origin & destination — results from /api/v1/compare</p>
+            <p class="text-muted">Enter origin & destination</p>
           </div>
-          <span class="chip">Compare API</span>
+          <span class="chip">We aim to Improve 🙂</span>
         </div>
 
         <form id="compareForm" class="form-grid form-grid-2">
           <div class="form-field">
             <label for="userId">User ID</label>
-            <input id="userId" name="userId" value="123" />
+            <input id="userId" name="userId" placeholder="Optional" />
           </div>
           <div class="form-field">
             <label for="preferCheapest">Prefer Cheapest?</label>
@@ -39,7 +39,7 @@
             </select>
           </div>
 
-          <div class="form-field">
+            <div class="form-field">
             <label for="origin">Origin</label>
             <input id="origin" name="origin" placeholder="Noida Sector 62" required />
           </div>
@@ -79,7 +79,58 @@
         <div id="providersList" class="providers-grid">
           <div class="text-muted" style="padding:1rem">No results — submit a compare request.</div>
         </div>
+          <!-- Info / Disclaimer (Inline) -->
+          <div class="disclaimer-wrapper">
+              <button id="toggleDisclaimer"
+                      class="info-circle"
+                      type="button"
+                      aria-controls="disclaimerBox"
+                      aria-expanded="false"
+                      aria-label="Show information and disclaimers">i</button>
+
+              <div id="disclaimerBox" class="disclaimer-box hidden">
+                  <ul>
+                      <li>All prices and estimates shown are approximate and based on calculated or observed data. 100% accuracy is not guaranteed.</li>
+                      <li>Further improvements can be made by introducing a common login system to authenticate users directly with providers and use official APIs.</li>
+                      <li>Exact distance calculation requires valid API keys configured via environment variables(currently unavailable). Mock distances are used for demo purposes.</li>
+                      <li>Metro options are displayed only when the selected origin and destination match valid metro stations or supported routes.</li>
+                      <li>Prices are calculated purely based on distance and do not guarantee ride availability without direct provider authentication (currently unavailable).</li>
+                  </ul>
+              </div>
+          </div>
+
       </section>
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Quick Demo</h2>
+                <p class="text-muted">Click to auto-fill sample routes</p>
+            </div>
+
+            <div class="demo-buttons">
+                <button class="btn btn-secondary demo-btn"
+                        data-origin="New Delhi"
+                        data-destination="Rajiv Chowk">
+                    New Delhi → Rajiv Chowk
+                </button>
+
+                <button class="btn btn-secondary demo-btn"
+                        data-origin="New Delhi"
+                        data-destination="Karol Bagh">
+                    New Delhi → Karol Bagh
+                </button>
+
+                <button class="btn btn-secondary demo-btn"
+                        data-origin="Mumbai"
+                        data-destination="Thane">
+                    Mumbai → Thane
+                </button>
+                <button class="btn btn-secondary demo-btn"
+                        data-origin="New Delhi"
+                        data-destination="Noida">
+                    New Delhi → Noida
+                </button>
+            </div>
+        </div>
     </main>
   </div>
 
@@ -102,22 +153,45 @@
   }
 
   function renderProviders(sortedFares = [], recommendedId = null) {
+    let fastestProviderId = null;
+    let minEta = Infinity;
+
+sortedFares.forEach(p => {
+  if (typeof p.etaMinutes === 'number' && p.etaMinutes < minEta) {
+    minEta = p.etaMinutes;
+    fastestProviderId = p.providerId;
+  }
+});
+
     providersList.innerHTML = '';
     if (!sortedFares || sortedFares.length === 0) {
-      providersList.innerHTML = '<div class="text-muted" style="padding:1rem">No providers returned</div>';
-      resultsCount.textContent = '0';
-      return;
+    showEmptyState('No providers available for this route.');
+    return;
     }
+
     resultsCount.textContent = sortedFares.length;
     // Build cards
     sortedFares.forEach(p => {
       const el = document.createElement('div');
       el.className = 'provider-card' + (p.providerId === recommendedId ? ' recommended' : '');
-      el.innerHTML = `
-        <div class="provider-top">
-          <div class="provider-name">${escapeHtml(p.providerName)}</div>
-          ${p.isSurge ? '<div class="surge">Surge</div>' : ''}
-        </div>
+  el.innerHTML = `
+  <div class="provider-top">
+    <div class="provider-name">
+      ${escapeHtml(p.providerName)}
+
+      ${p.providerId === recommendedId
+        ? '<span class="best-badge">Best Choice</span>'
+        : ''}
+
+      ${p.providerId === fastestProviderId
+        ? '<span class="fastest-icon" title="Fastest option">⏱</span>'
+        : ''}
+    </div>
+
+    ${p.isSurge ? '<div class="surge">Surge</div>' : ''}
+  </div>
+
+
         <div class="provider-body">
   <div class="fare">₹ ${Number(p.price).toFixed(2)}</div>
   <div class="eta">ETA: ${p.etaMinutes ?? '-'}m</div>
@@ -127,7 +201,7 @@
 </div>
 
         <div class="provider-foot">
-          <div class="small text-muted">providerId: ${escapeHtml(p.providerId)}</div>
+          <div class="small text-muted">Provider: ${escapeHtml(p.providerId)}</div>
         </div>
       `;
       providersList.appendChild(el);
@@ -157,14 +231,14 @@
       // Expected response shape from spec:
       // { requestId, origin, destination, totalDistanceKm, sortedFares: [...], recommendation: {...}, meta: {...} }
       lastResponseMeta = data.meta || null;
-      metaLine.textContent = `Request: ${data.requestId || '-'} • Distance: ${data.totalDistanceKm ?? '-'} km • ${lastResponseMeta ? 'traceId:' + lastResponseMeta.traceId : ''}`;
+      metaLine.textContent = `Distance: ${data.totalDistanceKm ?? '-'} km`;
       setStatus('Loaded at ' + (lastResponseMeta?.timestamp ? new Date(lastResponseMeta.timestamp).toLocaleString() : new Date().toLocaleTimeString()));
       renderProviders(data.sortedFares || [], data.recommendation?.chosenProviderId || null);
 
     } catch (err) {
       console.error(err);
       setStatus('Failed to load — check console', true);
-      providersList.innerHTML = '<div class="text-muted" style="padding:1rem">Error loading providers</div>';
+      showEmptyState('Service temporarily unavailable.');
     }
   }
 
@@ -200,6 +274,35 @@
     lastRequestPayload = null;
     lastResponseMeta = null;
   });
+
+    const toggleDisclaimer = document.getElementById('toggleDisclaimer');
+const disclaimerBox = document.getElementById('disclaimerBox');
+
+if (toggleDisclaimer && disclaimerBox) toggleDisclaimer.addEventListener('click', () => {
+  const isHidden = disclaimerBox.classList.toggle('hidden');
+
+  // Update accessibility state
+  toggleDisclaimer.setAttribute(
+    'aria-expanded',
+    String(!isHidden)
+  );
+});
+function showEmptyState(message) {
+  providersList.innerHTML = `
+    <div class="text-muted" style="padding:1rem">
+      ${message}
+    </div>
+  `;
+  resultsCount.textContent = '0';
+}
+    document.querySelectorAll('.demo-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('origin').value = btn.dataset.origin;
+    document.getElementById('destination').value = btn.dataset.destination;
+    setStatus('Demo route loaded');
+  });
+});
+
 </script>
 </body>
 </html>
