@@ -141,10 +141,15 @@ const API_BASE = '';
 * **Backend:** Render
 * **Database:** MongoDB Atlas
 
-> Live demo links can be added here after deployment.
+> Live demo links
+> Frontend : https://nikhilonadrenaline.github.io/FareComparator/
+> Backend : https://farecomparator-backend-ypzz.onrender.com
 
 ---
 
+Prefer local as the deployed model is facing some issues on the time of submission due to deployment but local works absolutely fine
+
+---
 ## 🔮 Future Scope
 
 * Official provider API integrations
